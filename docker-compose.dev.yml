@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  app:
+    build: 
+      context: .
+      target: build  # Use build stage for development
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:password@db:5432/mock_fitband_dev
+      - RUN_MIGRATIONS=true
+      - PORT=3000
+    volumes:
+      - ./src:/app/src
+      - ./prisma:/app/prisma
+      - /app/node_modules  # Anonymous volume to prevent overwriting
+    depends_on:
+      - db
+    restart: unless-stopped
+    networks:
+      - dev-network
+    command: npm run start:dev
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=mock_fitband_dev
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"  # Different port to avoid conflicts
+    restart: unless-stopped
+    networks:
+      - dev-network
+
+  # Optional: Database admin interface
+  adminer:
+    image: adminer:latest
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    networks:
+      - dev-network
+
+volumes:
+  postgres_dev_data:
+
+networks:
+  dev-network:
+    driver: bridge
