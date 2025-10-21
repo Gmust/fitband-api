@@ -12,13 +12,15 @@ COPY prisma ./prisma
 # Install all dependencies (including dev dependencies for build)
 RUN npm ci --silent
 
+# Generate Prisma client
+RUN npx prisma generate
+
 # Copy source code
 COPY tsconfig.json ./
 COPY src ./src
 
 # Build application
 RUN npm run build
-RUN npm run postinstall
 
 # -------- Runtime stage --------
 FROM node:20.18.0-alpine3.20
@@ -34,11 +36,14 @@ ENV PORT=8080
 
 # Copy package files and install only production dependencies
 COPY --chown=nestjs:nodejs package*.json ./
+COPY --chown=nestjs:nodejs prisma ./prisma
 RUN npm ci --only=production --silent && npm cache clean --force
 
-# Copy built application and Prisma files
+# Generate Prisma client for runtime
+RUN npx prisma generate
+
+# Copy built application
 COPY --from=build --chown=nestjs:nodejs /app/dist ./dist
-COPY --from=build --chown=nestjs:nodejs /app/prisma ./prisma
 
 # Create entrypoint script
 RUN echo '#!/bin/sh\n\

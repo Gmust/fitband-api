@@ -6,10 +6,62 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model Device {
+  id        String      @id @default(uuid())
+  name      String
+  secret    String // to verify HMAC signature of the data
+  createdAt DateTime    @default(now())
+  sessions  Session[]
+  telemetry Telemetry[]
+
+  @@index([createdAt(sort: Desc)])
+}
+
+//endedAt === null -> active session
+model Session {
+  id        String      @id @default(uuid())
+  deviceId  String
+  startedAt DateTime    @default(now())
+  endedAt   DateTime?
+  notes     String?
+  device    Device      @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  telemetry Telemetry[]
+
+  @@index([deviceId, startedAt(sort: Desc)])
+}
+
+// tsDevice is the device-provided timestamp
+// tsServer is the server receive time
+// messageId (optional) enables idempotency per device
+model Telemetry {
+  id        BigInt   @id @default(autoincrement())
+  deviceId  String
+  sessionId String?
+  tsDevice  DateTime
+  tsServer  DateTime @default(now())
+
+  heartRate     Int?
+  stepsDelta    Int?
+  caloriesDelta Decimal? @db.Decimal(8, 3)
+  battery        Decimal? @db.Decimal(4, 3)
+
+  ax Decimal? @db.Decimal(6, 3)
+  ay Decimal? @db.Decimal(6, 3)
+  az Decimal? @db.Decimal(6, 3)
+
+  messageId String?
+
+  device  Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  session Session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  @@unique([deviceId, messageId])
+  @@index([deviceId, tsServer(sort: Desc)])
+  @@index([sessionId, tsServer(sort: Desc)])
 }
