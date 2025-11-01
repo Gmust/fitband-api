@@ -45,9 +45,19 @@ RUN npx prisma generate
 # Copy built application
 COPY --from=build --chown=nestjs:nodejs /app/dist ./dist
 
-# Create entrypoint script
+# Create scripts directory and copy wait script
+RUN mkdir -p /app/scripts
+COPY --chown=nestjs:nodejs scripts/wait-for-db.js ./scripts/wait-for-db.js
+
+# Create entrypoint script with database wait
 RUN echo '#!/bin/sh\n\
 set -e\n\
+\n\
+# Wait for database to be ready (docker-compose healthcheck should handle this, but add extra safety)\n\
+echo "Waiting for database connection..."\n\
+node scripts/wait-for-db.js\n\
+\n\
+echo "Database is ready!"\n\
 \n\
 # Run database migrations if needed\n\
 if [ "$RUN_MIGRATIONS" = "true" ]; then\n\
@@ -56,7 +66,7 @@ if [ "$RUN_MIGRATIONS" = "true" ]; then\n\
 fi\n\
 \n\
 # Start the application\n\
-echo "Starting NestJS application..."\n\
+echo "Starting NestJS application on port ${PORT}..."\n\
 exec node dist/main.js\n\
 ' > /app/entrypoint.sh && \
 chmod +x /app/entrypoint.sh && \
@@ -69,7 +79,7 @@ USER nestjs
 EXPOSE 8080
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:8080/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })" || exit 1
 
 # Start the application
