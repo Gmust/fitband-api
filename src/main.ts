@@ -1,15 +1,19 @@
-import { NestFactory, Reflector } from '@nestjs/core';
+import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import helmet from 'helmet';
 import { json, urlencoded } from 'express';
 import { ValidationPipe } from '@nestjs/common';
-import { ThrottlerGuard } from '@nestjs/throttler';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy:
+        process.env.NODE_ENV === 'production' ? undefined : false,
+    }),
+  );
   app.enableCors({
     origin: (process.env.CORS_ORIGIN ?? '')
       .split(',')
@@ -65,6 +69,18 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document, {
     jsonDocumentUrl: 'swagger-json',
+    customSiteTitle: 'Mock Fitband API',
+    customJs: [],
+    swaggerOptions: {
+      persistAuthorization: true,
+      // Ensure Swagger uses the same protocol as the request
+      urls: [
+        {
+          url: 'swagger-json',
+          name: 'Default',
+        },
+      ],
+    },
   });
 
   await app.listen(process.env.PORT ?? 3000);
