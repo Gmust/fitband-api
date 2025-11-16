@@ -9,8 +9,14 @@ RUN apk add --no-cache python3 make g++
 COPY package*.json ./
 COPY prisma ./prisma
 
-# Install all dependencies (including dev dependencies for build)
-RUN npm ci --silent
+# Configure npm for better reliability and speed
+RUN npm config set fetch-timeout 600000 && \
+    npm config set fetch-retry-mintimeout 20000 && \
+    npm config set fetch-retry-maxtimeout 120000 && \
+    npm config set progress false
+
+# Install all dependencies (using npm install instead of ci for better network handling)
+RUN npm install --no-audit --legacy-peer-deps
 
 # Generate Prisma client
 RUN npx prisma generate
@@ -37,10 +43,18 @@ ENV PORT=8080
 # Copy package files and install only production dependencies
 COPY --chown=nestjs:nodejs package*.json ./
 COPY --chown=nestjs:nodejs prisma ./prisma
-RUN npm ci --only=production --silent && npm cache clean --force
 
-# Generate Prisma client for runtime
-RUN npx prisma generate
+# Configure npm for better reliability
+RUN npm config set fetch-timeout 600000 && \
+    npm config set fetch-retry-mintimeout 20000 && \
+    npm config set fetch-retry-maxtimeout 120000 && \
+    npm config set progress false
+
+# Install production dependencies (skip postinstall script that needs prisma CLI)
+RUN npm install --only=production --no-audit --legacy-peer-deps --ignore-scripts && npm cache clean --force
+
+# Install prisma CLI temporarily to generate client, then remove it
+RUN npm install --no-save prisma@^6.17.1 && npx prisma generate && npm uninstall prisma
 
 # Copy built application
 COPY --from=build --chown=nestjs:nodejs /app/dist ./dist
@@ -50,27 +64,26 @@ RUN mkdir -p /app/scripts
 COPY --chown=nestjs:nodejs scripts/wait-for-db.js ./scripts/wait-for-db.js
 
 # Create entrypoint script with database wait
-RUN echo '#!/bin/sh\n\
-set -e\n\
-\n\
-# Wait for database to be ready (docker-compose healthcheck should handle this, but add extra safety)\n\
-echo "Waiting for database connection..."\n\
-node scripts/wait-for-db.js\n\
-\n\
-echo "Database is ready!"\n\
-\n\
-# Run database migrations if needed\n\
-if [ "$RUN_MIGRATIONS" = "true" ]; then\n\
-  echo "Running database migrations..."\n\
-  npx prisma migrate deploy\n\
-fi\n\
-\n\
-# Start the application\n\
-echo "Starting NestJS application on port ${PORT}..."\n\
-exec node dist/main.js\n\
-' > /app/entrypoint.sh && \
-chmod +x /app/entrypoint.sh && \
-chown nestjs:nodejs /app/entrypoint.sh
+RUN echo '#!/bin/sh' > /app/entrypoint.sh && \
+    echo 'set -e' >> /app/entrypoint.sh && \
+    echo '' >> /app/entrypoint.sh && \
+    echo '# Wait for database to be ready' >> /app/entrypoint.sh && \
+    echo 'echo "Waiting for database connection..."' >> /app/entrypoint.sh && \
+    echo 'node scripts/wait-for-db.js' >> /app/entrypoint.sh && \
+    echo '' >> /app/entrypoint.sh && \
+    echo 'echo "Database is ready!"' >> /app/entrypoint.sh && \
+    echo '' >> /app/entrypoint.sh && \
+    echo '# Run database migrations if needed' >> /app/entrypoint.sh && \
+    echo 'if [ "$RUN_MIGRATIONS" = "true" ]; then' >> /app/entrypoint.sh && \
+    echo '  echo "Running database migrations..."' >> /app/entrypoint.sh && \
+    echo '  npx prisma migrate deploy' >> /app/entrypoint.sh && \
+    echo 'fi' >> /app/entrypoint.sh && \
+    echo '' >> /app/entrypoint.sh && \
+    echo '# Start the application' >> /app/entrypoint.sh && \
+    echo 'echo "Starting NestJS application on port ${PORT}..."' >> /app/entrypoint.sh && \
+    echo 'exec node dist/main.js' >> /app/entrypoint.sh && \
+    chmod +x /app/entrypoint.sh && \
+    chown nestjs:nodejs /app/entrypoint.sh
 
 # Switch to non-root user
 USER nestjs
@@ -83,5 +96,6 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:8080/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })" || exit 1
 
 # Start the application
-CMD ["./entrypoint.sh"]
+WORKDIR /app
+CMD ["/app/entrypoint.sh"]
   
