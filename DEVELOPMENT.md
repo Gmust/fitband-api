@@ -304,3 +304,32 @@ npm run start:debug
 - [Prisma Documentation](https://www.prisma.io/docs/)
 - [Docker Documentation](https://docs.docker.com/)
 - [Azure Container Instances](https://docs.microsoft.com/en-us/azure/container-instances/)
+
+## API - Devices
+
+The API exposes a simple Device resource backed by Prisma.
+
+- `POST /devices` : Create a device. Body: `{ "name": "My Device", "secret": "s3cr3t" }`
+- `GET /devices` : List devices (most recent first).
+- `GET /devices/:id` : Get a single device by id.
+- `PATCH /devices/:id` : Update a device. Body may contain `name` and/or `secret`.
+- `DELETE /devices/:id` : Delete a device.
+
+Example requests:
+
+```bash
+# Create
+curl -X POST http://localhost:3000/devices -H "Content-Type: application/json" -d '{"name":"Band A","secret":"topsecret"}'
+
+# List
+curl http://localhost:3000/devices
+
+# Get
+curl http://localhost:3000/devices/<id>
+
+# Update
+curl -X PATCH http://localhost:3000/devices/<id> -H "Content-Type: application/json" -d '{"name":"Band B"}'
+
+# Delete
+curl -X DELETE http://localhost:3000/devices/<id>
+```
