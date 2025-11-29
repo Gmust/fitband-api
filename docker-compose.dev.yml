@@ -7,45 +7,53 @@ services:
       # Use full image for development (includes dependencies)
     ports:
       - "3000:3000"
+    env_file:
+      - .env  # Load environment variables from .env file
     environment:
       - NODE_ENV=development
-      - DATABASE_URL=postgresql://postgres:password@db:5432/mock_fitband_dev
-      - RUN_MIGRATIONS=true
       - PORT=3000
+      # DATABASE_URL will be read from .env file
+      # If DATABASE_URL is not in .env, it will use the default below
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:password@db:5432/mock_fitband_dev}
+      - RUN_MIGRATIONS=${RUN_MIGRATIONS:-true}
     volumes:
       - ./src:/app/src
       - ./prisma:/app/prisma
       - /app/node_modules  # Anonymous volume to prevent overwriting
-    depends_on:
-      - db
+    # Remove depends_on if using external DB (no local db service needed)
+    # depends_on:
+    #   - db
     restart: unless-stopped
     networks:
       - dev-network
     # Use the production entrypoint (builds and runs the app)
 
-  db:
-    image: postgres:15-alpine
-    environment:
-      - POSTGRES_DB=mock_fitband_dev
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=password
-    volumes:
-      - postgres_dev_data:/var/lib/postgresql/data
-    ports:
-      - "5433:5432"  # Different port to avoid conflicts
-    restart: unless-stopped
-    networks:
-      - dev-network
+  # Local database service - COMMENTED OUT when using external cloud DB
+  # Uncomment this section if you want to use a local database instead
+  # db:
+  #   image: postgres:15-alpine
+  #   environment:
+  #     - POSTGRES_DB=mock_fitband_dev
+  #     - POSTGRES_USER=postgres
+  #     - POSTGRES_PASSWORD=password
+  #   volumes:
+  #     - postgres_dev_data:/var/lib/postgresql/data
+  #   ports:
+  #     - "5433:5432"  # Different port to avoid conflicts
+  #   restart: unless-stopped
+  #   networks:
+  #     - dev-network
 
   # Optional: Database admin interface
-  adminer:
-    image: adminer:latest
-    ports:
-      - "8080:8080"
-    depends_on:
-      - db
-    networks:
-      - dev-network
+  # Uncomment if you want to use Adminer (only works with local db)
+  # adminer:
+  #   image: adminer:latest
+  #   ports:
+  #     - "8080:8080"
+  #   depends_on:
+  #     - db
+  #   networks:
+  #     - dev-network
 
 volumes:
   postgres_dev_data:
