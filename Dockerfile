@@ -50,11 +50,14 @@ RUN npm config set fetch-timeout 600000 && \
     npm config set fetch-retry-maxtimeout 120000 && \
     npm config set progress false
 
-# Install production dependencies (skip postinstall script that needs prisma CLI)
-RUN npm install --only=production --no-audit --legacy-peer-deps --ignore-scripts && npm cache clean --force
+# Install all dependencies (skip postinstall script that needs prisma CLI)
+RUN npm install --no-audit --legacy-peer-deps --ignore-scripts && npm cache clean --force
 
 # Install prisma CLI temporarily to generate client, then remove it
 RUN npm install --no-save prisma@^6.17.1 && npx prisma generate && npm uninstall prisma
+
+# Install NestJS CLI for development mode
+RUN npm install --no-save @nestjs/cli@^11.0.0
 
 # Copy built application
 COPY --from=build --chown=nestjs:nodejs /app/dist ./dist
@@ -80,10 +83,18 @@ RUN echo '#!/bin/sh' > /app/entrypoint.sh && \
     echo 'fi' >> /app/entrypoint.sh && \
     echo '' >> /app/entrypoint.sh && \
     echo '# Start the application' >> /app/entrypoint.sh && \
-    echo 'echo "Starting NestJS application on port ${PORT}..."' >> /app/entrypoint.sh && \
-    echo 'exec node dist/main.js' >> /app/entrypoint.sh && \
+    echo 'if [ "$NODE_ENV" = "development" ]; then' >> /app/entrypoint.sh && \
+    echo '  echo "Starting NestJS application in development mode..."' >> /app/entrypoint.sh && \
+    echo '  exec npm run start:dev' >> /app/entrypoint.sh && \
+    echo 'else' >> /app/entrypoint.sh && \
+    echo '  echo "Starting NestJS application in production mode on port ${PORT}..."' >> /app/entrypoint.sh && \
+    echo '  exec node dist/main.js' >> /app/entrypoint.sh && \
+    echo 'fi' >> /app/entrypoint.sh && \
     chmod +x /app/entrypoint.sh && \
     chown nestjs:nodejs /app/entrypoint.sh
+
+# Change ownership of node_modules to allow npm install in development
+RUN chown -R nestjs:nodejs /app/node_modules
 
 # Switch to non-root user
 USER nestjs
@@ -98,4 +109,3 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
 # Start the application
 WORKDIR /app
 CMD ["/app/entrypoint.sh"]
-  
