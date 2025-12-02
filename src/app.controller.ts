@@ -1,4 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
+import { ApiResponse } from '@nestjs/swagger';
 import { AppService } from './app.service';
 import { PrismaService } from './common/datasource/Prisma.Service';
 
@@ -10,11 +11,13 @@ export class AppController {
   ) {}
 
   @Get()
+  @ApiResponse({ status: 200, description: 'Hello message' })
   getHello(): string {
     return this.appService.getHello();
   }
 
   @Get('health')
+  @ApiResponse({ status: 200, description: 'Health check status' })
   async getHealth() {
     let dbStatus = 'unknown';
     let dbLatency: number | null = null;

@@ -21,9 +21,11 @@ export class PrismaService
 
     globalForPrisma.prisma = this;
   }
+
   async onModuleInit() {
     await this.$connect();
   }
+
   async onModuleDestroy() {
     await this.$disconnect();
   }

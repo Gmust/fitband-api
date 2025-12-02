@@ -2,9 +2,9 @@ version: '3.8'
 
 services:
   app:
-    build: 
+    build:
       context: .
-      target: build  # Use build stage for development
+      # Use full image for development (includes dependencies)
     ports:
       - "3000:3000"
     environment:
@@ -21,7 +21,7 @@ services:
     restart: unless-stopped
     networks:
       - dev-network
-    command: npm run start:dev
+    # Use the production entrypoint (builds and runs the app)
 
   db:
     image: postgres:15-alpine
