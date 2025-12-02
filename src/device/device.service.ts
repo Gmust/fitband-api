@@ -7,10 +7,10 @@ import { UpdateDeviceDto } from './dto/update-device.dto';
 export class DeviceService {
   constructor(private prisma: PrismaService) {}
 
+  // Devices are now created automatically during user registration
+  // This method is kept for potential future use but should not be called directly
   async create(createDeviceDto: CreateDeviceDto) {
-    return this.prisma.device.create({
-      data: createDeviceDto,
-    });
+    throw new Error('Devices must be created through user registration');
   }
 
   async findAll() {
