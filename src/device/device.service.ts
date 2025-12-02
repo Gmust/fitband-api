@@ -41,6 +41,22 @@ export class DeviceService {
     return device;
   }
 
+  async findByUserId(userId: string) {
+    const device = await this.prisma.device.findUnique({
+      where: { userId },
+      include: {
+        sessions: true,
+        telemetry: true,
+      },
+    });
+
+    if (!device) {
+      throw new NotFoundException(`Device for user ${userId} not found`);
+    }
+
+    return device;
+  }
+
   async update(id: string, updateDeviceDto: UpdateDeviceDto) {
     try {
       return await this.prisma.device.update({

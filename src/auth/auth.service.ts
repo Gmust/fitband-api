@@ -13,7 +13,7 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto) {
-    const { deviceId, email, password, name } = registerDto;
+    const { deviceId, email, password } = registerDto;
 
     // Check if user already exists
     const existingUser = await this.prisma.user.findUnique({
@@ -43,8 +43,7 @@ export class AuthService {
         data: {
           email,
           password: hashedPassword,
-          name,
-          deviceId, // This will be the Device's id
+          deviceId // This will be the Device's id
         },
       });
 
@@ -52,7 +51,7 @@ export class AuthService {
       const device = await prisma.device.create({
         data: {
           id: deviceId,
-          name: `${name}'s Device`,
+          name: `${email}'s Device`,
           secret: this.generateSecret(),
           userId: user.id,
         },
@@ -70,14 +69,13 @@ export class AuthService {
       user: {
         id: result.user.id,
         email: result.user.email,
-        name: result.user.name,
         deviceId: result.user.deviceId,
       },
     };
   }
 
   async login(loginDto: LoginDto) {
-    const { deviceId, name, email, password } = loginDto;
+    const { deviceId, email, password } = loginDto;
 
     // Find user by email
     const user = await this.prisma.user.findUnique({
@@ -89,8 +87,8 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Validate deviceId and name match
-    if (user.deviceId !== deviceId || user.name !== name) {
+    // Validate deviceId match
+    if (user.deviceId !== deviceId) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -110,7 +108,6 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
-        name: user.name,
         deviceId: user.deviceId,
       },
     };

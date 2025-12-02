@@ -10,7 +10,6 @@ import {
   HttpCode,
   HttpStatus,
   ParseIntPipe,
-  Logger,
 } from '@nestjs/common';
 import { ApiResponse } from '@nestjs/swagger';
 import { TelemetryService } from './telemetry.service';
@@ -19,15 +18,12 @@ import { UpdateTelemetryDto } from './dto/update-telemetry.dto';
 
 @Controller('telemetry')
 export class TelemetryController {
-  private readonly logger = new Logger(TelemetryController.name);
-
   constructor(private readonly telemetryService: TelemetryService) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiResponse({ status: 201, description: 'Telemetry created successfully' })
   create(@Body() createTelemetryDto: CreateTelemetryDto) {
-    this.logger.log(`POST - Telemetry creation initiated successfully with status ${HttpStatus.CREATED}`);
     return this.telemetryService.create(createTelemetryDto);
   }
 

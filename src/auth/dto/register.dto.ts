@@ -5,10 +5,6 @@ export class RegisterDto {
   @IsNotEmpty()
   deviceId: string;
 
-  @IsString()
-  @IsNotEmpty()
-  name: string;
-
   @IsEmail()
   email: string;
 

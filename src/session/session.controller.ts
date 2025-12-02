@@ -9,7 +9,6 @@ import {
   HttpCode,
   HttpStatus,
   Put,
-  Logger,
   UseGuards,
 } from '@nestjs/common';
 import { ApiResponse } from '@nestjs/swagger';
@@ -20,8 +19,6 @@ import { JwtAuthGuard } from '../common/guards/auth.guard';
 
 @Controller('sessions')
 export class SessionController {
-  private readonly logger = new Logger(SessionController.name);
-
   constructor(private readonly sessionService: SessionService) {}
 
   @Post()
@@ -30,7 +27,6 @@ export class SessionController {
   @ApiResponse({ status: 201, description: 'Session created successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   create(@Body() createSessionDto: CreateSessionDto) {
-    this.logger.log(`POST - Session creation initiated successfully with status ${HttpStatus.CREATED}`);
     return this.sessionService.create(createSessionDto);
   }
 
