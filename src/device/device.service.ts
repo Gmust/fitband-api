@@ -1,17 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/datasource/Prisma.Service';
-import { CreateDeviceDto } from './dto/create-device.dto';
 import { UpdateDeviceDto } from './dto/update-device.dto';
 
 @Injectable()
 export class DeviceService {
   constructor(private prisma: PrismaService) {}
-
-  // Devices are now created automatically during user registration
-  // This method is kept for potential future use but should not be called directly
-  async create(createDeviceDto: CreateDeviceDto) {
-    throw new Error('Devices must be created through user registration');
-  }
 
   async findAll() {
     return this.prisma.device.findMany({
@@ -58,29 +51,15 @@ export class DeviceService {
   }
 
   async update(id: string, updateDeviceDto: UpdateDeviceDto) {
-    try {
-      return await this.prisma.device.update({
-        where: { id },
-        data: updateDeviceDto,
-      });
-    } catch (error) {
-      if (error.code === 'P2025') {
-        throw new NotFoundException(`Device with ID ${id} not found`);
-      }
-      throw error;
-    }
+    return await this.prisma.device.update({
+      where: { id },
+      data: updateDeviceDto,
+    });
   }
 
   async remove(id: string) {
-    try {
-      return await this.prisma.device.delete({
-        where: { id },
-      });
-    } catch (error) {
-      if (error.code === 'P2025') {
-        throw new NotFoundException(`Device with ID ${id} not found`);
-      }
-      throw error;
-    }
+    return await this.prisma.device.delete({
+      where: { id },
+    });
   }
 }

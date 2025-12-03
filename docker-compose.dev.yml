@@ -19,6 +19,9 @@ services:
     volumes:
       - ./src:/app/src
       - ./prisma:/app/prisma
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./tsconfig.build.json:/app/tsconfig.build.json
+      - ./nest-cli.json:/app/nest-cli.json
       - /app/node_modules  # Anonymous volume to prevent overwriting
     # Remove depends_on if using external DB (no local db service needed)
     # depends_on:

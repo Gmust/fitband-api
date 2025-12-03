@@ -1,9 +1,22 @@
 -- CreateTable
+CREATE TABLE "users" (
+    "id" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "password" TEXT NOT NULL,
+    "deviceId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "users_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Device" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "secret" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "userId" TEXT NOT NULL,
 
     CONSTRAINT "Device_pkey" PRIMARY KEY ("id")
 );
@@ -39,6 +52,15 @@ CREATE TABLE "Telemetry" (
 );
 
 -- CreateIndex
+CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "users_deviceId_key" ON "users"("deviceId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Device_userId_key" ON "Device"("userId");
+
+-- CreateIndex
 CREATE INDEX "Device_createdAt_idx" ON "Device"("createdAt" DESC);
 
 -- CreateIndex
@@ -52,6 +74,9 @@ CREATE INDEX "Telemetry_sessionId_tsServer_idx" ON "Telemetry"("sessionId", "tsS
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Telemetry_deviceId_messageId_key" ON "Telemetry"("deviceId", "messageId");
+
+-- AddForeignKey
+ALTER TABLE "Device" ADD CONSTRAINT "Device_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Session" ADD CONSTRAINT "Session_deviceId_fkey" FOREIGN KEY ("deviceId") REFERENCES "Device"("id") ON DELETE CASCADE ON UPDATE CASCADE;

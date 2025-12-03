@@ -1,9 +1,18 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { randomUUID, randomBytes } from 'crypto';
 import { PrismaService } from '../common/datasource/Prisma.Service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+
+interface JwtPayload {
+  email: string;
+  sub: string;
+  deviceId: string;
+}
 
 @Injectable()
 export class AuthService {
@@ -13,7 +22,7 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto) {
-    const { deviceId, email, password } = registerDto;
+    const { email, password } = registerDto;
 
     // Check if user already exists
     const existingUser = await this.prisma.user.findUnique({
@@ -24,26 +33,20 @@ export class AuthService {
       throw new UnauthorizedException('User already exists');
     }
 
-    // Check if device already exists
-    const existingDevice = await this.prisma.device.findUnique({
-      where: { id: deviceId },
-    });
-
-    if (existingDevice) {
-      throw new UnauthorizedException('Device already exists');
-    }
+    // Generate device ID automatically
+    const deviceId = randomUUID();
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user and device in a transaction
     const result = await this.prisma.$transaction(async (prisma) => {
-      // Create user first
+      // Create user first with deviceId
       const user = await prisma.user.create({
         data: {
           email,
           password: hashedPassword,
-          deviceId // This will be the Device's id
+          deviceId, // This will be the Device's id
         },
       });
 
@@ -61,7 +64,11 @@ export class AuthService {
     });
 
     // Generate JWT token
-    const payload = { email: result.user.email, sub: result.user.id, deviceId: result.user.deviceId };
+    const payload: JwtPayload = {
+      email: result.user.email,
+      sub: result.user.id,
+      deviceId: result.user.deviceId,
+    };
     const token = this.jwtService.sign(payload);
 
     return {
@@ -75,7 +82,7 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto) {
-    const { deviceId, email, password } = loginDto;
+    const { email, password } = loginDto;
 
     // Find user by email
     const user = await this.prisma.user.findUnique({
@@ -87,11 +94,6 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Validate deviceId match
-    if (user.deviceId !== deviceId) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
     // Check password
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
@@ -100,7 +102,11 @@ export class AuthService {
     }
 
     // Generate JWT token
-    const payload = { email: user.email, sub: user.id, deviceId: user.deviceId };
+    const payload: JwtPayload = {
+      email: user.email,
+      sub: user.id,
+      deviceId: user.deviceId,
+    };
     const token = this.jwtService.sign(payload);
 
     return {
@@ -113,7 +119,8 @@ export class AuthService {
     };
   }
 
-  async validateUser(userId: string) {
+  validateUser(userId: string) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return this.prisma.user.findUnique({
       where: { id: userId },
       include: { device: true },
@@ -121,6 +128,6 @@ export class AuthService {
   }
 
   private generateSecret(): string {
-    return require('crypto').randomBytes(32).toString('hex');
+    return randomBytes(32).toString('hex');
   }
 }

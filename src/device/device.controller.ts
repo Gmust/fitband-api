@@ -1,32 +1,25 @@
 import {
   Controller,
   Get,
-  Post,
   Body,
   Patch,
   Param,
   Delete,
   HttpCode,
   HttpStatus,
-  Request,
   UseGuards,
 } from '@nestjs/common';
-import { ApiResponse } from '@nestjs/swagger';
+import { ApiResponse, ApiBody, ApiTags } from '@nestjs/swagger';
 import { DeviceService } from './device.service';
-import { CreateDeviceDto } from './dto/create-device.dto';
 import { UpdateDeviceDto } from './dto/update-device.dto';
-import { JwtAuthGuard } from '../common/guards/auth.guard';
+import { AuthGuard } from '../common/guards/auth.guard';
+import { GetUser } from '../common/decorators/get-user.decorator';
+import { User } from '@prisma/client';
 
+@ApiTags('Devices')
 @Controller('devices')
 export class DeviceController {
   constructor(private readonly deviceService: DeviceService) {}
-
-  @Post()
-  @HttpCode(HttpStatus.CREATED)
-  @ApiResponse({ status: 201, description: 'Device created successfully' })
-  create(@Body() createDeviceDto: CreateDeviceDto) {
-    return this.deviceService.create(createDeviceDto);
-  }
 
   @Get()
   @ApiResponse({ status: 200, description: 'List of all devices' })
@@ -35,12 +28,13 @@ export class DeviceController {
   }
 
   @Get('my-device')
-  @UseGuards(JwtAuthGuard)
-  @ApiResponse({ status: 200, description: 'User\'s device' })
+  @UseGuards(AuthGuard)
+  @ApiResponse({ status: 200, description: "User's device" })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Device not found' })
-  findMyDevice(@Request() req) {
-    const userId = req.user.userId;
-    return this.deviceService.findByUserId(userId);
+  findMyDevice(@GetUser() user: User) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+    return this.deviceService.findByUserId(user.id);
   }
 
   @Get(':id')
@@ -51,7 +45,9 @@ export class DeviceController {
   }
 
   @Patch(':id')
+  @ApiBody({ type: UpdateDeviceDto })
   @ApiResponse({ status: 200, description: 'Device updated' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiResponse({ status: 404, description: 'Device not found' })
   update(@Param('id') id: string, @Body() updateDeviceDto: UpdateDeviceDto) {
     return this.deviceService.update(id, updateDeviceDto);

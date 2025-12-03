@@ -11,28 +11,30 @@ import {
   HttpStatus,
   ParseIntPipe,
 } from '@nestjs/common';
-import { ApiResponse } from '@nestjs/swagger';
+import { ApiResponse, ApiBody, ApiTags, ApiQuery } from '@nestjs/swagger';
 import { TelemetryService } from './telemetry.service';
 import { CreateTelemetryDto } from './dto/create-telemetry.dto';
 import { UpdateTelemetryDto } from './dto/update-telemetry.dto';
 
+@ApiTags('Telemetry')
 @Controller('telemetry')
 export class TelemetryController {
   constructor(private readonly telemetryService: TelemetryService) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @ApiBody({ type: CreateTelemetryDto })
   @ApiResponse({ status: 201, description: 'Telemetry created successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
   create(@Body() createTelemetryDto: CreateTelemetryDto) {
     return this.telemetryService.create(createTelemetryDto);
   }
 
   @Get()
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'offset', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'List of all telemetry data' })
-  findAll(
-    @Query('limit') limit?: string,
-    @Query('offset') offset?: string,
-  ) {
+  findAll(@Query('limit') limit?: string, @Query('offset') offset?: string) {
     const limitNum = limit ? parseInt(limit, 10) : undefined;
     const offsetNum = offset ? parseInt(offset, 10) : undefined;
     return this.telemetryService.findAll(limitNum, offsetNum);
@@ -46,7 +48,12 @@ export class TelemetryController {
   }
 
   @Get('device/:deviceId')
-  @ApiResponse({ status: 200, description: 'List of telemetry data for the device' })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'offset', required: false, type: Number })
+  @ApiResponse({
+    status: 200,
+    description: 'List of telemetry data for the device',
+  })
   findByDevice(
     @Param('deviceId') deviceId: string,
     @Query('limit') limit?: string,
@@ -63,20 +70,10 @@ export class TelemetryController {
     return this.telemetryService.getLatestByDevice(deviceId);
   }
 
-  @Get('session/:sessionId')
-  @ApiResponse({ status: 200, description: 'List of telemetry data for the session' })
-  findBySession(
-    @Param('sessionId') sessionId: string,
-    @Query('limit') limit?: string,
-    @Query('offset') offset?: string,
-  ) {
-    const limitNum = limit ? parseInt(limit, 10) : undefined;
-    const offsetNum = offset ? parseInt(offset, 10) : undefined;
-    return this.telemetryService.findBySession(sessionId, limitNum, offsetNum);
-  }
-
   @Patch(':id')
+  @ApiBody({ type: UpdateTelemetryDto })
   @ApiResponse({ status: 200, description: 'Telemetry updated' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiResponse({ status: 404, description: 'Telemetry not found' })
   update(
     @Param('id', ParseIntPipe) id: number,

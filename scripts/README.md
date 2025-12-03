@@ -19,8 +19,7 @@ scripts/
 │   └── update-duckdns.sh           # Update DuckDNS IP
 │
 └── utils/              # Utility scripts
-    ├── troubleshoot-dns.sh         # DNS troubleshooting
-    └── wait-for-db.js              # Wait for database connection
+    └── troubleshoot-dns.sh         # DNS troubleshooting
 ```
 
 ## Usage

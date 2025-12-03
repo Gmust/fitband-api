@@ -14,23 +14,12 @@ export class TelemetryService {
     });
 
     if (!device) {
-      throw new NotFoundException(`Device with ID ${createTelemetryDto.deviceId} not found`);
+      throw new NotFoundException(
+        `Device with ID ${createTelemetryDto.deviceId} not found`,
+      );
     }
 
-    // If sessionId is provided, verify session exists and belongs to the device
-    if (createTelemetryDto.sessionId) {
-      const session = await this.prisma.session.findUnique({
-        where: { id: createTelemetryDto.sessionId },
-      });
-
-      if (!session) {
-        throw new NotFoundException(`Session with ID ${createTelemetryDto.sessionId} not found`);
-      }
-
-      if (session.deviceId !== createTelemetryDto.deviceId) {
-        throw new NotFoundException(`Session ${createTelemetryDto.sessionId} does not belong to device ${createTelemetryDto.deviceId}`);
-      }
-    }
+    // Note: sessionId is optional and ignored - sessions not used in this simplified architecture
 
     // Check for idempotency if messageId is provided
     if (createTelemetryDto.messageId) {
@@ -130,34 +119,20 @@ export class TelemetryService {
   }
 
   async update(id: number, updateTelemetryDto: UpdateTelemetryDto) {
-    try {
-      return await this.prisma.telemetry.update({
-        where: { id },
-        data: updateTelemetryDto,
-        include: {
-          device: true,
-          session: true,
-        },
-      });
-    } catch (error) {
-      if (error.code === 'P2025') {
-        throw new NotFoundException(`Telemetry with ID ${id} not found`);
-      }
-      throw error;
-    }
+    return await this.prisma.telemetry.update({
+      where: { id },
+      data: updateTelemetryDto,
+      include: {
+        device: true,
+        session: true,
+      },
+    });
   }
 
   async remove(id: number) {
-    try {
-      return await this.prisma.telemetry.delete({
-        where: { id },
-      });
-    } catch (error) {
-      if (error.code === 'P2025') {
-        throw new NotFoundException(`Telemetry with ID ${id} not found`);
-      }
-      throw error;
-    }
+    return await this.prisma.telemetry.delete({
+      where: { id },
+    });
   }
 
   async getLatestByDevice(deviceId: string) {
