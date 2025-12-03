@@ -53,8 +53,22 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('Mock Fitband API')
-    .setDescription('IOT mock fitband API')
+    .setDescription(
+      'REST API for mock fitness band devices. Handles user authentication and device management. Real-time telemetry streaming via WebSocket bridge.',
+    )
     .setVersion('1.0.0')
+    .addTag('Authentication', 'User authentication and registration')
+    .addTag('Devices', 'Device management endpoints (1 device per user)')
+    .addTag('Telemetry', 'Telemetry data storage (optional)')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description: 'Enter JWT token',
+      },
+      'JWT-auth',
+    )
     .addApiKey(
       {
         type: 'apiKey',

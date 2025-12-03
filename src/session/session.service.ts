@@ -14,7 +14,9 @@ export class SessionService {
     });
 
     if (!device) {
-      throw new NotFoundException(`Device with ID ${createSessionDto.deviceId} not found`);
+      throw new NotFoundException(
+        `Device with ID ${createSessionDto.deviceId} not found`,
+      );
     }
 
     return this.prisma.session.create({
@@ -81,53 +83,32 @@ export class SessionService {
   }
 
   async update(id: string, updateSessionDto: UpdateSessionDto) {
-    try {
-      return await this.prisma.session.update({
-        where: { id },
-        data: updateSessionDto,
-        include: {
-          device: true,
-          telemetry: true,
-        },
-      });
-    } catch (error) {
-      if (error.code === 'P2025') {
-        throw new NotFoundException(`Session with ID ${id} not found`);
-      }
-      throw error;
-    }
+    return await this.prisma.session.update({
+      where: { id },
+      data: updateSessionDto,
+      include: {
+        device: true,
+        telemetry: true,
+      },
+    });
   }
 
   async endSession(id: string) {
-    try {
-      return await this.prisma.session.update({
-        where: { id },
-        data: {
-          endedAt: new Date(),
-        },
-        include: {
-          device: true,
-          telemetry: true,
-        },
-      });
-    } catch (error) {
-      if (error.code === 'P2025') {
-        throw new NotFoundException(`Session with ID ${id} not found`);
-      }
-      throw error;
-    }
+    return await this.prisma.session.update({
+      where: { id },
+      data: {
+        endedAt: new Date(),
+      },
+      include: {
+        device: true,
+        telemetry: true,
+      },
+    });
   }
 
   async remove(id: string) {
-    try {
-      return await this.prisma.session.delete({
-        where: { id },
-      });
-    } catch (error) {
-      if (error.code === 'P2025') {
-        throw new NotFoundException(`Session with ID ${id} not found`);
-      }
-      throw error;
-    }
+    return await this.prisma.session.delete({
+      where: { id },
+    });
   }
 }

@@ -56,25 +56,12 @@ RUN npm install --no-audit --legacy-peer-deps --ignore-scripts && npm cache clea
 # Install prisma CLI temporarily to generate client, then remove it
 RUN npm install --no-save prisma@^6.17.1 && npx prisma generate && npm uninstall prisma
 
-# Install NestJS CLI for development mode
-RUN npm install --no-save @nestjs/cli@^11.0.0
-
-# Copy built application
+# Copy built application (for production)
 COPY --from=build --chown=nestjs:nodejs /app/dist ./dist
 
-# Create scripts directory and copy wait script
-RUN mkdir -p /app/scripts
-COPY --chown=nestjs:nodejs scripts/wait-for-db.js ./scripts/wait-for-db.js
-
-# Create entrypoint script with database wait
+# Create entrypoint script
 RUN echo '#!/bin/sh' > /app/entrypoint.sh && \
     echo 'set -e' >> /app/entrypoint.sh && \
-    echo '' >> /app/entrypoint.sh && \
-    echo '# Wait for database to be ready' >> /app/entrypoint.sh && \
-    echo 'echo "Waiting for database connection..."' >> /app/entrypoint.sh && \
-    echo 'node scripts/wait-for-db.js' >> /app/entrypoint.sh && \
-    echo '' >> /app/entrypoint.sh && \
-    echo 'echo "Database is ready!"' >> /app/entrypoint.sh && \
     echo '' >> /app/entrypoint.sh && \
     echo '# Run database migrations if needed' >> /app/entrypoint.sh && \
     echo 'if [ "$RUN_MIGRATIONS" = "true" ]; then' >> /app/entrypoint.sh && \
@@ -85,6 +72,11 @@ RUN echo '#!/bin/sh' > /app/entrypoint.sh && \
     echo '# Start the application' >> /app/entrypoint.sh && \
     echo 'if [ "$NODE_ENV" = "development" ]; then' >> /app/entrypoint.sh && \
     echo '  echo "Starting NestJS application in development mode..."' >> /app/entrypoint.sh && \
+    echo '  # Install dev dependencies if not present (for anonymous node_modules volume)' >> /app/entrypoint.sh && \
+    echo '  if [ ! -f "node_modules/.bin/nest" ]; then' >> /app/entrypoint.sh && \
+    echo '    echo "Installing dependencies..."' >> /app/entrypoint.sh && \
+    echo '    npm install --no-audit --legacy-peer-deps' >> /app/entrypoint.sh && \
+    echo '  fi' >> /app/entrypoint.sh && \
     echo '  exec npm run start:dev' >> /app/entrypoint.sh && \
     echo 'else' >> /app/entrypoint.sh && \
     echo '  echo "Starting NestJS application in production mode on port ${PORT}..."' >> /app/entrypoint.sh && \
@@ -93,8 +85,9 @@ RUN echo '#!/bin/sh' > /app/entrypoint.sh && \
     chmod +x /app/entrypoint.sh && \
     chown nestjs:nodejs /app/entrypoint.sh
 
-# Change ownership of node_modules to allow npm install in development
-RUN chown -R nestjs:nodejs /app/node_modules
+# Change ownership of entire /app directory to nestjs user
+# This ensures the user can write/delete files in development mode
+RUN chown -R nestjs:nodejs /app
 
 # Switch to non-root user
 USER nestjs

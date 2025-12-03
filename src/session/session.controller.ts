@@ -11,20 +11,23 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { ApiResponse } from '@nestjs/swagger';
+import { ApiResponse, ApiBody, ApiTags } from '@nestjs/swagger';
 import { SessionService } from './session.service';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { UpdateSessionDto } from './dto/update-session.dto';
-import { JwtAuthGuard } from '../common/guards/auth.guard';
+import { AuthGuard } from '../common/guards/auth.guard';
 
+@ApiTags('Sessions')
 @Controller('sessions')
 export class SessionController {
   constructor(private readonly sessionService: SessionService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AuthGuard)
   @HttpCode(HttpStatus.CREATED)
+  @ApiBody({ type: CreateSessionDto })
   @ApiResponse({ status: 201, description: 'Session created successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   create(@Body() createSessionDto: CreateSessionDto) {
     return this.sessionService.create(createSessionDto);
@@ -56,7 +59,9 @@ export class SessionController {
   }
 
   @Patch(':id')
+  @ApiBody({ type: UpdateSessionDto })
   @ApiResponse({ status: 200, description: 'Session updated' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiResponse({ status: 404, description: 'Session not found' })
   update(@Param('id') id: string, @Body() updateSessionDto: UpdateSessionDto) {
     return this.sessionService.update(id, updateSessionDto);
