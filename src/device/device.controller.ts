@@ -9,7 +9,7 @@ import {
   HttpStatus,
   UseGuards,
 } from '@nestjs/common';
-import { ApiResponse, ApiBody, ApiTags } from '@nestjs/swagger';
+import { ApiResponse, ApiBody, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { DeviceService } from './device.service';
 import { UpdateDeviceDto } from './dto/update-device.dto';
 import { AuthGuard } from '../common/guards/auth.guard';
@@ -18,6 +18,7 @@ import { User } from '@prisma/client';
 
 @ApiTags('Devices')
 @Controller('devices')
+@ApiBearerAuth('access-token')
 export class DeviceController {
   constructor(private readonly deviceService: DeviceService) {}
 

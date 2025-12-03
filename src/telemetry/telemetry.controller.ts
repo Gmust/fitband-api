@@ -11,13 +11,20 @@ import {
   HttpStatus,
   ParseIntPipe,
 } from '@nestjs/common';
-import { ApiResponse, ApiBody, ApiTags, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiResponse,
+  ApiBody,
+  ApiTags,
+  ApiQuery,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { TelemetryService } from './telemetry.service';
 import { CreateTelemetryDto } from './dto/create-telemetry.dto';
 import { UpdateTelemetryDto } from './dto/update-telemetry.dto';
 
 @ApiTags('Telemetry')
 @Controller('telemetry')
+@ApiBearerAuth('access-token')
 export class TelemetryController {
   constructor(private readonly telemetryService: TelemetryService) {}
 
