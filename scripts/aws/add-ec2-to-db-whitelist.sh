@@ -64,18 +64,24 @@ echo "  IP: ${PUBLIC_IP}/32"
 echo "  Port: 5432 (PostgreSQL)"
 echo ""
 
-if aws ec2 authorize-security-group-ingress \
+# Capture both stdout and stderr to check for specific error messages
+ERROR_OUTPUT=$(aws ec2 authorize-security-group-ingress \
   --group-id ${DB_SECURITY_GROUP_ID} \
   --protocol tcp \
   --port 5432 \
-  --cidr ${PUBLIC_IP}/32 2>/dev/null; then
+  --cidr ${PUBLIC_IP}/32 2>&1)
+EXIT_CODE=$?
+
+if [ $EXIT_CODE -eq 0 ]; then
   echo -e "${GREEN}✓ Successfully added IP to database whitelist${NC}"
 else
-  EXIT_CODE=$?
-  if [ $EXIT_CODE -eq 254 ]; then
+  # AWS CLI returns exit code 255 for API errors, including duplicate rules
+  # Check for InvalidPermission.Duplicate error message
+  if echo "$ERROR_OUTPUT" | grep -q "InvalidPermission.Duplicate\|already exists"; then
     echo -e "${YELLOW}⚠ Rule already exists (IP may already be whitelisted)${NC}"
   else
     echo -e "${RED}✗ Failed to add IP to whitelist${NC}"
+    echo -e "${RED}Error: ${ERROR_OUTPUT}${NC}"
     exit 1
   fi
 fi

@@ -13,9 +13,9 @@ NC='\033[0m'
 echo -e "${BLUE}=== HTTPS Setup with DuckDNS ===${NC}"
 echo ""
 
-# Check if running on EC2
-if [ ! -f /etc/nginx/nginx.conf ]; then
-  echo -e "${YELLOW}This script should be run on the EC2 instance${NC}"
+# Check if running on EC2 (check for Ubuntu/Debian system)
+if [ ! -f /etc/os-release ] || ! grep -q "Ubuntu\|Debian" /etc/os-release; then
+  echo -e "${YELLOW}This script should be run on an Ubuntu/Debian EC2 instance${NC}"
   echo "SSH into your EC2 instance first:"
   echo "  ssh -i ~/.ssh/mock-fitband-api-key.pem ubuntu@<EC2_IP>"
   exit 1
@@ -142,7 +142,7 @@ server {
         proxy_set_header Connection 'upgrade';
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
         proxy_cache_bypass \$http_upgrade;
         

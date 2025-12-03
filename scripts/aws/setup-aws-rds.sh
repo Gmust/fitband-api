@@ -113,14 +113,18 @@ echo ""
 echo -e "${BLUE}Creating RDS instance...${NC}"
 echo "This will take 5-10 minutes..."
 
-# Build command
+# Properly escape password to prevent shell injection
+# printf '%q' safely escapes all special characters including quotes
+ESCAPED_PASSWORD=$(printf '%q' "$DB_PASSWORD")
+
+# Build command with properly escaped password
 CREATE_CMD="aws rds create-db-instance \
   --db-instance-identifier ${DB_INSTANCE_ID} \
   --db-instance-class ${DB_INSTANCE_CLASS} \
   --engine postgres \
   --engine-version 15.4 \
   --master-username ${DB_USER} \
-  --master-user-password '${DB_PASSWORD}' \
+  --master-user-password ${ESCAPED_PASSWORD} \
   --allocated-storage ${STORAGE_SIZE} \
   --storage-type gp3 \
   --db-name ${DB_NAME} \
@@ -139,6 +143,8 @@ if [ -n "$VPC_ID" ] && [ "$VPC_ID" != "None" ]; then
 fi
 
 # Execute creation
+# Note: eval is still used here because CREATE_CMD is dynamically built
+# The password is now properly escaped, so it's safe
 if eval $CREATE_CMD; then
     echo -e "${GREEN}✓ RDS instance creation initiated${NC}"
     echo ""
