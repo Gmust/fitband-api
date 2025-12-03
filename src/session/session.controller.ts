@@ -11,7 +11,7 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { ApiResponse, ApiBody, ApiTags } from '@nestjs/swagger';
+import { ApiResponse, ApiBody, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { SessionService } from './session.service';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { UpdateSessionDto } from './dto/update-session.dto';
@@ -19,6 +19,7 @@ import { AuthGuard } from '../common/guards/auth.guard';
 
 @ApiTags('Sessions')
 @Controller('sessions')
+@ApiBearerAuth('access-token')
 export class SessionController {
   constructor(private readonly sessionService: SessionService) {}
 

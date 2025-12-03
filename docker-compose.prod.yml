@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   app:
     build:
@@ -19,10 +17,6 @@ services:
       - RUN_MIGRATIONS=${RUN_MIGRATIONS:-true}
       - CORS_ORIGIN=${CORS_ORIGIN:-*}
       - LOG_LEVEL=${LOG_LEVEL:-info}
-    # Remove depends_on since we're using external database
-    # depends_on:
-    #   db:
-    #     condition: service_healthy
     restart: unless-stopped
     networks:
       - app-network
@@ -37,33 +31,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-
-  # Local database service - COMMENTED OUT when using external cloud database
-  # Uncomment this section if you want to use a local database instead
-  # db:
-  #   image: postgres:15-alpine
-  #   container_name: mock-fitband-api-db
-  #   environment:
-  #     - POSTGRES_DB=${POSTGRES_DB:-mock_fitband_db}
-  #     - POSTGRES_USER=${POSTGRES_USER:-postgres}
-  #     - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-  #     - PGDATA=/var/lib/postgresql/data/pgdata
-  #   volumes:
-  #     - postgres_data:/var/lib/postgresql/data
-  #   restart: unless-stopped
-  #   networks:
-  #     - app-network
-  #   healthcheck:
-  #     test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
-  #     interval: 10s
-  #     timeout: 3s
-  #     retries: 5
-  #     start_period: 10s
-  #   logging:
-  #     driver: "json-file"
-  #     options:
-  #       max-size: "10m"
-  #       max-file: "3"
 
 volumes:
   postgres_data:

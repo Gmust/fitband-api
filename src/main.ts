@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import { json, urlencoded } from 'express';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { BigIntSerializerInterceptor } from './common/interceptors/bigint-serializer.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -15,9 +16,8 @@ async function bootstrap() {
     }),
   );
   app.enableCors({
-    origin: (process.env.CORS_ORIGIN ?? '')
-      .split(',')
-      .map((origin) => origin.trim()),
+    origin: true,
+    credentials: true,
   });
 
   app.use(
@@ -40,16 +40,8 @@ async function bootstrap() {
     }),
   );
 
-  //TODO: Add throttler guard
-  // app.useGlobalGuards(
-  //   new ThrottlerGuard(
-  //     app.get(Reflector),
-  //     {},
-  //     {
-  //       ignoreUserAgents: [/postman/i, /insomnia/i, /swagger/i],
-  //     },
-  //   ),
-  // );
+  // Transform BigInt values to strings for JSON serialization
+  app.useGlobalInterceptors(new BigIntSerializerInterceptor());
 
   const config = new DocumentBuilder()
     .setTitle('Mock Fitband API')
@@ -67,7 +59,7 @@ async function bootstrap() {
         bearerFormat: 'JWT',
         description: 'Enter JWT token',
       },
-      'JWT-auth',
+      'access-token',
     )
     .addApiKey(
       {
