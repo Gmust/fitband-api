@@ -1,0 +1,29 @@
+aws_region = "us-east-1"
+
+instance_name = "mock-fitband-api"
+instance_type = "t3.micro"
+key_name      = "mock-fitband-api-key"
+
+db_instance_identifier = "mock-fitband-db"
+db_name                = "mock_fitband_db"
+db_username            = "postgres"
+db_password            = "CHANGE_ME_SECURE_PASSWORD"
+db_instance_class       = "db.t3.micro"
+db_allocated_storage    = 20
+db_engine_version       = "15.4"
+db_publicly_accessible  = true
+db_backup_retention_period = 7
+
+# Security: Restrict CIDR blocks for production
+allowed_ssh_cidr   = "0.0.0.0/0"  # Change to your IP: "YOUR_IP/32"
+allowed_http_cidr  = "0.0.0.0/0"
+allowed_https_cidr = "0.0.0.0/0"
+allowed_app_cidr   = "0.0.0.0/0"
+allowed_db_cidr    = "0.0.0.0/0"  # Should be restricted to EC2 security group only
+
+tags = {
+  Project    = "mock-fitband-api"
+  ManagedBy  = "terraform"
+  Environment = "production"
+}
+
