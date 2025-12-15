@@ -16,9 +16,17 @@ async function bootstrap() {
     }),
   );
   app.enableCors({
-    origin: (process.env.CORS_ORIGIN ?? '')
-      .split(',')
-      .map((origin) => origin.trim()),
+    origin: (() => {
+      const corsOrigin = process.env.CORS_ORIGIN ?? '';
+      if (corsOrigin === '*' || corsOrigin === '') {
+        return true; // Allow all origins
+      }
+      return corsOrigin
+        .split(',')
+        .map((origin) => origin.trim())
+        .filter((origin) => origin.length > 0);
+    })(),
+    credentials: true,
   });
 
   app.use(
