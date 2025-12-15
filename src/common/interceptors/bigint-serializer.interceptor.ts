@@ -12,12 +12,14 @@ function transformBigInt(value: any): any {
     return value.toString();
   }
   if (Array.isArray(value)) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return value.map((item) => transformBigInt(item));
   }
   if (typeof value === 'object' && value !== null) {
     const transformed: { [key: string]: any } = {};
     for (const key in value) {
       if (Object.prototype.hasOwnProperty.call(value, key)) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         transformed[key] = transformBigInt(value[key]);
       }
     }
